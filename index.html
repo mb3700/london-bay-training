@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Claude + HubSpot Training | London Bay Homes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy: #1a2332;
+            --navy-deep: #0f1720;
+            --gold: #c5a255;
+            --gold-light: #d4b76a;
+            --gold-pale: #f5ecd7;
+            --slate: #4a5568;
+            --slate-light: #718096;
+            --light-gray: #f7f8fa;
+            --lighter-gray: #fafbfc;
+            --white: #ffffff;
+            --green: #48bb78;
+            --green-bg: #f0fff4;
+            --border: #e2e8f0;
+            --mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--lighter-gray);
+            color: var(--navy);
+            line-height: 1.7;
+            font-size: 15px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            position: fixed; top: 0; left: 0; height: 3px;
+            background: linear-gradient(90deg, var(--gold), var(--gold-light));
+            z-index: 1000; width: 0; transition: width 0.1s linear;
+        }
+
+        /* Hero */
+        .cover {
+            background: linear-gradient(135deg, var(--navy-deep) 0%, var(--navy) 60%, #243447 100%);
+            color: var(--white); padding: 80px 40px; text-align: center;
+            position: relative; overflow: hidden;
+        }
+        .cover::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at 30% 50%, rgba(197,162,85,0.08) 0%, transparent 70%);
+        }
+        .cover-content { position: relative; max-width: 800px; margin: 0 auto; }
+        .cover-badge {
+            display: inline-block; border: 1px solid var(--gold); color: var(--gold);
+            padding: 6px 20px; font-size: 0.65rem; letter-spacing: 3px;
+            text-transform: uppercase; border-radius: 2px; margin-bottom: 30px;
+        }
+        .cover h1 {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 2.8rem; font-weight: 400; line-height: 1.2;
+            margin-bottom: 12px; letter-spacing: 1px;
+        }
+        .cover h1 span { color: var(--gold); }
+        .cover h2 {
+            font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 300;
+            color: var(--gold-light); letter-spacing: 2px; text-transform: uppercase;
+            margin-bottom: 40px;
+        }
+        .cover-meta {
+            display: flex; justify-content: center; gap: 40px;
+            font-size: 0.8rem; color: rgba(255,255,255,0.6);
+        }
+        .cover-meta strong { color: var(--gold-light); }
+
+        /* Navigation */
+        .nav-bar {
+            background: var(--white); border-bottom: 1px solid var(--border);
+            position: sticky; top: 3px; z-index: 100;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .nav-container {
+            max-width: 800px; margin: 0 auto; display: flex;
+            align-items: center; padding: 0 16px;
+        }
+        .nav-inner {
+            display: flex; gap: 0; overflow-x: auto; scrollbar-width: none; flex: 1;
+        }
+        .nav-inner::-webkit-scrollbar { display: none; }
+        .nav-link {
+            padding: 14px 14px; font-size: 0.7rem; text-transform: uppercase;
+            letter-spacing: 1px; color: var(--slate); text-decoration: none;
+            white-space: nowrap; border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .nav-link:hover { color: var(--navy); border-bottom-color: var(--gold); }
+        .hamburger {
+            display: none; flex-direction: column; gap: 5px; background: none;
+            border: none; cursor: pointer; padding: 10px;
+        }
+        .hamburger span {
+            width: 22px; height: 2px; background: var(--gold); display: block;
+            transition: all 0.3s;
+        }
+        .mobile-nav {
+            position: fixed; inset: 0; background: rgba(15,23,32,0.97);
+            z-index: 200; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; gap: 24px; transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+        .mobile-nav.open { transform: translateX(0); }
+        .mobile-nav-close {
+            position: absolute; top: 20px; right: 20px; background: none;
+            border: none; color: var(--gold); font-size: 2rem; cursor: pointer;
+        }
+        .mobile-nav-link {
+            color: var(--white); text-decoration: none; font-size: 1.1rem;
+            letter-spacing: 1px; padding: 10px 20px; transition: color 0.2s;
+        }
+        .mobile-nav-link:hover { color: var(--gold); }
+
+        /* Main */
+        .main { max-width: 800px; margin: 0 auto; padding: 40px 24px 80px; }
+
+        /* Accordion */
+        .accordion { margin-bottom: 20px; scroll-margin-top: 70px; }
+        .accordion-header {
+            background: var(--white); padding: 18px 24px; border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06); cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center;
+            transition: all 0.2s; user-select: none;
+        }
+        .accordion-header:hover { background: var(--light-gray); }
+        .accordion-header h2 {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            font-size: 1.35rem; font-weight: 600; display: flex;
+            align-items: center; gap: 12px;
+        }
+        .acc-num {
+            color: var(--gold); font-size: 1.6rem; font-weight: 700;
+            font-family: 'Cormorant Garamond', serif; line-height: 1;
+        }
+        .chevron {
+            width: 20px; height: 20px; transition: transform 0.3s; color: var(--slate-light);
+            flex-shrink: 0;
+        }
+        .accordion.open .chevron { transform: rotate(180deg); }
+        .accordion.open .accordion-header {
+            border-radius: 8px 8px 0 0; border-bottom: 1px solid var(--border);
+        }
+        .accordion-body {
+            max-height: 0; overflow: hidden; transition: max-height 0.4s ease;
+        }
+        .accordion-content {
+            padding: 24px; background: var(--white); border-radius: 0 0 8px 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        .accordion-content p { margin-bottom: 14px; font-size: 0.92rem; color: var(--slate); }
+        .accordion-content h3 {
+            font-family: 'Cormorant Garamond', serif; font-size: 1.15rem;
+            font-weight: 600; color: var(--navy); margin: 20px 0 10px;
+        }
+        .accordion-content h4 {
+            font-size: 0.82rem; font-weight: 600; color: var(--navy);
+            margin: 16px 0 8px; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+
+        /* Prompt Cards */
+        .prompt-card {
+            background: var(--navy-deep); border-radius: 8px; margin: 16px 0;
+            overflow: hidden; border: 1px solid rgba(197,162,85,0.2);
+        }
+        .prompt-card-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 16px; background: rgba(197,162,85,0.1);
+            border-bottom: 1px solid rgba(197,162,85,0.15);
+        }
+        .prompt-label {
+            font-size: 0.6rem; text-transform: uppercase; letter-spacing: 2px;
+            color: var(--gold); font-weight: 600;
+        }
+        .copy-btn {
+            background: transparent; border: 1px solid var(--gold); color: var(--gold);
+            padding: 4px 12px; border-radius: 4px; font-size: 0.65rem; cursor: pointer;
+            transition: all 0.2s; display: flex; align-items: center; gap: 5px;
+            font-family: 'Inter', sans-serif; letter-spacing: 0.5px; text-transform: uppercase;
+        }
+        .copy-btn:hover { background: var(--gold); color: var(--navy-deep); }
+        .copy-btn.copied { border-color: var(--green); color: var(--green); background: rgba(72,187,120,0.1); }
+        .prompt-text {
+            padding: 16px; font-family: var(--mono); font-size: 0.82rem;
+            color: #e2e8f0; line-height: 1.6; white-space: pre-wrap;
+        }
+
+        /* Tabs */
+        .tab-nav { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 0; }
+        .tab-btn {
+            flex: 1; padding: 12px 16px; background: transparent; border: none;
+            font-family: 'Inter', sans-serif; font-size: 0.78rem; font-weight: 500;
+            color: var(--slate-light); cursor: pointer;
+            border-bottom: 2px solid transparent; margin-bottom: -2px;
+            transition: all 0.2s; text-align: center;
+        }
+        .tab-btn.active { color: var(--navy); border-bottom-color: var(--gold); font-weight: 600; }
+        .tab-btn:hover { color: var(--navy); }
+        .tab-panel { display: none; padding: 20px 0; }
+        .tab-panel.active { display: block; }
+
+        /* Exercises */
+        .exercise {
+            display: flex; gap: 14px; padding: 16px; background: var(--white);
+            border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border);
+            transition: all 0.3s; cursor: pointer;
+        }
+        .exercise.done { border-color: var(--green); background: var(--green-bg); }
+        .exercise-check {
+            width: 24px; height: 24px; border: 2px solid var(--border); border-radius: 6px;
+            flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s; margin-top: 2px;
+        }
+        .exercise.done .exercise-check {
+            background: var(--green); border-color: var(--green); color: white;
+        }
+        .exercise-content h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 4px; }
+        .exercise-content p { font-size: 0.82rem; color: var(--slate); margin-bottom: 8px; }
+        .exercise-content ol { padding-left: 18px; font-size: 0.82rem; color: var(--slate); }
+        .exercise-content ol li { margin-bottom: 4px; }
+
+        /* Callouts */
+        .callout {
+            padding: 16px 20px; border-radius: 6px; margin: 16px 0;
+            font-size: 0.85rem; line-height: 1.6;
+        }
+        .callout-gold { background: var(--gold-pale); border-left: 4px solid var(--gold); }
+        .callout-tip { background: var(--green-bg); border-left: 4px solid var(--green); }
+        .callout-info { background: #ebf8ff; border-left: 4px solid #4299e1; }
+
+        /* Commitment Fields */
+        .commitment-field {
+            width: 100%; padding: 12px 16px; border: 1px solid var(--border);
+            border-radius: 6px; font-family: 'Inter', sans-serif; font-size: 0.88rem;
+            background: var(--white); transition: border-color 0.2s; margin-bottom: 14px;
+        }
+        .commitment-field:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(197,162,85,0.1); }
+        .commitment-label { font-size: 0.82rem; font-weight: 600; margin-bottom: 6px; display: block; }
+
+        /* Quick Reference */
+        .quick-ref {
+            background: var(--navy); border-radius: 8px; padding: 24px;
+            color: var(--white); margin: 16px 0;
+        }
+        .quick-ref-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.1); gap: 12px;
+        }
+        .quick-ref-item:last-child { border-bottom: none; }
+        .quick-ref-label { font-size: 0.78rem; color: var(--gold-light); font-weight: 500; flex-shrink: 0; }
+        .quick-ref-prompt { font-family: var(--mono); font-size: 0.72rem; color: #a0aec0; flex: 1; }
+        .quick-ref-copy {
+            background: transparent; border: 1px solid rgba(197,162,85,0.4); color: var(--gold);
+            padding: 3px 8px; border-radius: 3px; font-size: 0.55rem; cursor: pointer;
+            transition: all 0.2s; flex-shrink: 0; font-family: 'Inter', sans-serif;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .quick-ref-copy:hover { background: var(--gold); color: var(--navy-deep); }
+        .quick-ref-copy.copied { border-color: var(--green); color: var(--green); }
+
+        /* Steps */
+        .step { display: flex; gap: 16px; margin-bottom: 20px; }
+        .step-num {
+            width: 36px; height: 36px; border-radius: 50%; background: var(--gold);
+            color: var(--white); display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.85rem; flex-shrink: 0;
+        }
+        .step-body { flex: 1; }
+        .step-body h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 4px; }
+        .step-body p { font-size: 0.85rem; color: var(--slate); }
+
+        /* Week plan */
+        .week-plan { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
+        .week-card {
+            background: var(--white); border-radius: 8px; padding: 16px;
+            border: 1px solid var(--border); transition: border-color 0.2s;
+        }
+        .week-card:hover { border-color: var(--gold); }
+        .week-num {
+            font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1.5px;
+            color: var(--gold); font-weight: 600; margin-bottom: 6px;
+        }
+        .week-card h4 { font-size: 0.88rem; font-weight: 600; margin-bottom: 4px; }
+        .week-card p { font-size: 0.78rem; color: var(--slate); }
+
+        /* Limits list */
+        .limits-list { list-style: none; padding: 0; }
+        .limits-list li {
+            padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 0.85rem;
+            color: var(--slate); display: flex; align-items: center; gap: 10px;
+        }
+        .limits-list li:last-child { border-bottom: none; }
+        .limits-list li::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--slate-light); flex-shrink: 0; }
+
+        /* Help list */
+        .help-list { list-style: none; padding: 0; }
+        .help-list li { padding: 8px 0; font-size: 0.85rem; color: var(--slate); }
+        .help-list li strong { color: var(--navy); }
+
+        /* Footer */
+        .footer {
+            text-align: center; padding: 40px 24px; font-size: 0.78rem;
+            color: var(--slate-light); border-top: 1px solid var(--border);
+        }
+
+        /* Sub-section header */
+        .sub-header {
+            font-family: 'Cormorant Garamond', serif; font-size: 1.1rem;
+            font-weight: 600; color: var(--navy); margin: 24px 0 12px;
+            padding-bottom: 8px; border-bottom: 1px solid var(--border);
+        }
+
+        /* Italic accent */
+        .accent { font-style: italic; color: var(--slate-light); font-size: 0.85rem; margin-bottom: 16px; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-inner { display: none; }
+            .hamburger { display: flex; }
+            .cover { padding: 60px 24px; }
+            .cover h1 { font-size: 2rem; }
+            .cover h2 { font-size: 0.85rem; }
+            .cover-meta { flex-direction: column; gap: 8px; }
+            .tab-btn { font-size: 0.7rem; padding: 10px 8px; }
+            .week-plan { grid-template-columns: 1fr; }
+            .quick-ref-item { flex-direction: column; align-items: flex-start; gap: 6px; }
+            .quick-ref-prompt { text-align: left; }
+        }
+        @media (max-width: 480px) {
+            .cover { padding: 50px 20px; }
+            .cover h1 { font-size: 1.7rem; }
+            .main { padding: 24px 16px 60px; }
+            .accordion-header { padding: 14px 16px; }
+            .accordion-header h2 { font-size: 1.15rem; }
+            .accordion-content { padding: 16px; }
+            .prompt-text { font-size: 0.76rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<!-- HERO -->
+<div class="cover">
+    <div class="cover-content">
+        <div class="cover-badge">Sales Team Training</div>
+        <h1>Claude + <span>HubSpot</span></h1>
+        <h2>Your Daily AI Assistant</h2>
+        <div class="cover-meta">
+            <span>London Bay Homes</span>
+            <span><strong>February 2026</strong></span>
+            <span>45-minute training</span>
+        </div>
+    </div>
+</div>
+
+<!-- NAV -->
+<nav class="nav-bar">
+    <div class="nav-container">
+        <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="nav-inner">
+            <a class="nav-link" href="#part1">Fears</a>
+            <a class="nav-link" href="#part2">Setup</a>
+            <a class="nav-link" href="#part3">Daily Uses</a>
+            <a class="nav-link" href="#part4">Practice</a>
+            <a class="nav-link" href="#part5">Errors</a>
+            <a class="nav-link" href="#part6">Prompts</a>
+            <a class="nav-link" href="#part7">Habit</a>
+            <a class="nav-link" href="#quickref">Quick Ref</a>
+        </div>
+    </div>
+</nav>
+<div class="mobile-nav" id="mobileNav">
+    <button class="mobile-nav-close" id="mobileNavClose">&times;</button>
+    <a class="mobile-nav-link" href="#part1">What Claude Is</a>
+    <a class="mobile-nav-link" href="#part2">First 5 Minutes</a>
+    <a class="mobile-nav-link" href="#part3">3 Daily Uses</a>
+    <a class="mobile-nav-link" href="#part4">Practice</a>
+    <a class="mobile-nav-link" href="#part5">When It's Wrong</a>
+    <a class="mobile-nav-link" href="#part6">More Prompts</a>
+    <a class="mobile-nav-link" href="#part7">Build the Habit</a>
+    <a class="mobile-nav-link" href="#quickref">Quick Reference</a>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- PART 1 -->
+<div class="accordion open" id="part1">
+    <div class="accordion-header" onclick="toggleAccordion(this)">
+        <h2><span class="acc-num">01</span> What Claude Actually Is (and Is Not)</h2>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="accordion-body">
+        <div class="accordion-content">
+            <p class="accent">Before we open anything, let's clear the air on the three questions everyone has.</p>
+
+            <h3>"Will it mess up my data?"</h3>
+            <p>No. Claude reads your HubSpot data through a secure connector. When you ask it a question, it looks up contacts, deals, and activities the same way you would &mdash; it just does it instantly. It cannot delete records. It cannot bulk-edit your database. If you ask it to update something (like moving a deal stage or logging a note), it will show you exactly what it plans to do and wait for you to say "yes" before it touches anything.</p>
+
+            <h3>"Is it replacing me?"</h3>
+            <p>Absolutely not. Claude does not build relationships. It does not sit across from a client at a model home. It does not read body language or know when to push and when to listen. What it does is make HubSpot effortless. Instead of clicking through screens to log a note, you just tell Claude what happened and it does the data entry for you. Instead of building reports manually, you ask a question and get an answer. Think of it as the world's best assistant who handles the CRM busywork so you can focus on what you actually do &mdash; sell homes and build relationships.</p>
+
+            <h3>"Can my clients see this?"</h3>
+            <p>No. Claude works inside your company's Claude Teams account and connects only to your company's HubSpot portal. No client data leaves the system. No outside databases are involved. Your clients will never know you used it &mdash; they'll just notice that you seem more prepared and never forget a detail.</p>
+        </div>
+    </div>
+</div>
+
+<!-- PART 2 -->
+<div class="accordion" id="part2">
+    <div class="accordion-header" onclick="toggleAccordion(this)">
+        <h2><span class="acc-num">02</span> Your First Five Minutes</h2>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="accordion-body">
+        <div class="accordion-content">
+            <p class="accent">This is the part where it clicks. Follow these steps exactly.</p>
+
+            <div class="step">
+                <div class="step-num">1</div>
+                <div class="step-body">
+                    <h4>Open Claude</h4>
+                    <p>Go to <strong>claude.ai</strong> in your browser (Chrome works best). Log in with your London Bay Homes Claude Teams account. Click <strong>"New Chat"</strong> to start a conversation.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-num">2</div>
+                <div class="step-body">
+                    <h4>Connect HubSpot</h4>
+                    <p>In the chat input area, look for the <strong>connectors icon</strong> (it may say "Search & Tools"). Toggle <strong>HubSpot ON</strong>. You should see a small HubSpot icon confirming the connection.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-num">3</div>
+                <div class="step-body">
+                    <h4>Ask Your First Question</h4>
+                    <p>Let's start with something that shows Claude's power immediately. Copy this prompt &mdash; it will pull your actual pipeline from HubSpot:</p>
+                </div>
+            </div>
+
+            <div class="prompt-card">
+                <div class="prompt-card-header">
+                    <span class="prompt-label">Your First Prompt</span>
+                    <button class="copy-btn" onclick="copyPrompt(this)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                        Copy
+                    </button>
+                </div>
+                <div class="prompt-text">Show me all my Warm Prospects deals. Include the deal name, amount, close date, and any notes or activity that's been logged.</div>
+            </div>
+
+            <div class="callout callout-gold">
+                <strong>Watch what happens.</strong> Claude will pull your actual deals from HubSpot and organize them in a clean table. You'll see your pipeline at a glance &mdash; something that normally takes multiple clicks and filters in HubSpot. You might also notice some deals are missing amounts or notes &mdash; that's normal, and Claude can help you fix that.
+            </div>
+
+            <div class="step">
+                <div class="step-num">4</div>
+                <div class="step-body">
+                    <h4>Now Try a Client Lookup</h4>
+                    <p>Pick one of the client names from that list and ask Claude about them:</p>
+                </div>
+            </div>
+
+            <div class="prompt-card">
+                <div class="prompt-card-header">
+                    <span class="prompt-label">Follow-up Prompt</span>
+                    <button class="copy-btn" onclick="copyPrompt(this)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                        Copy
+                    </button>
+                </div>
+                <div class="prompt-text">Tell me everything we know about [client name from your list]. Include their contact info, deal details, and any activity that's been logged.</div>
+            </div>
+
+            <div class="callout callout-tip">
+                <strong>Don't worry if some records are thin.</strong> If Claude doesn't find many notes or logged calls, that's not Claude's fault &mdash; it means those details haven't been entered into HubSpot yet. The good news? You're about to learn how Claude makes logging that information effortless. That's what Part 3 is all about.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PART 3 -->
+<div class="accordion" id="part3">
+    <div class="accordion-header" onclick="toggleAccordion(this)">
+        <h2><span class="acc-num">03</span> The Three Things You'll Use Every Day</h2>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="accordion-body">
+        <div class="accordion-content">
+            <p class="accent">You don't need to learn 50 features. You need three. Master these and Claude becomes part of your daily rhythm.</p>
+
+            <div class="tab-nav">
+                <button class="tab-btn active" onclick="switchTab(this, 'tab-after')">After a Meeting ⭐</button>
+                <button class="tab-btn" onclick="switchTab(this, 'tab-meeting')">Before a Meeting</button>
+                <button class="tab-btn" onclick="switchTab(this, 'tab-pipeline')">Pipeline Check</button>
+            </div>
+
+            <div class="tab-panel active" id="tab-after">
+                <h4>This Is the Game-Changer</h4>
+                <p>You just walked out of a meeting or hung up the phone. The details are fresh. But opening HubSpot, finding the right record, clicking "Log Activity," and typing it all out? It's a chore. So sometimes it waits. And sometimes it never gets logged. <strong>Claude eliminates that friction.</strong> Just tell it what happened, in your own words:</p>
+                <div class="prompt-card">
+                    <div class="prompt-card-header">
+                        <span class="prompt-label">After Meeting Prompt</span>
+                        <button class="copy-btn" onclick="copyPrompt(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button>
+                    </div>
+                    <div class="prompt-text">Log a note on [client name]'s deal: Met today at the Design Center. They're deciding between the Avignon and Catalina floor plans. Budget is around $4.2M. Wife prefers the larger lanai. Wants updated pricing by Thursday. Schedule follow-up call for Friday at 2pm.</div>
+                </div>
+                <h4>What Happens</h4>
+                <p>Claude will show you exactly what it plans to log and ask for your confirmation. Once you approve, the note is saved to HubSpot &mdash; without you ever opening HubSpot. You can also ask it to create a follow-up task and update the deal stage, all in the same conversation.</p>
+                <div class="callout callout-gold"><strong>Why this is #1:</strong> Every note you log through Claude becomes searchable intelligence. The next time anyone on the team looks up this client &mdash; whether through Claude or HubSpot &mdash; they'll see exactly what happened. This is how you build a CRM that actually works for you instead of feeling like extra work.</div>
+
+                <div class="prompt-card">
+                    <div class="prompt-card-header">
+                        <span class="prompt-label">Update Deal Amount</span>
+                        <button class="copy-btn" onclick="copyPrompt(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button>
+                    </div>
+                    <div class="prompt-text">Update the deal amount for [client name] to $4,200,000. Also move them to Warm Prospects stage.</div>
+                </div>
+                <div class="callout callout-tip"><strong>Pro tip:</strong> Many deals currently have placeholder amounts ($5, $6). When you log a note mentioning budget, ask Claude to update the deal amount at the same time. Two updates, one conversation, 30 seconds.</div>
+            </div>
+
+            <div class="tab-panel" id="tab-meeting">
+                <h4>The Situation</h4>
+                <p>You're about to walk into a meeting, get on a call, or visit a model home with a prospect. You want to know: where does this deal stand, and what's been happening?</p>
+                <div class="prompt-card">
+                    <div class="prompt-card-header">
+                        <span class="prompt-label">Before Meeting Prompt</span>
+                        <button class="copy-btn" onclick="copyPrompt(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button>
+                    </div>
+                    <div class="prompt-text">What do we know about [client name]? Show me their deal info, contact details, and any notes or activities that have been logged.</div>
+                </div>
+                <h4>What You Get Back</h4>
+                <p>Claude pulls together everything in HubSpot: contact info, deal stage, amount, close date, and any notes or activities that have been logged. Instead of clicking through multiple HubSpot screens, you get a complete picture in seconds.</p>
+                <div class="callout callout-tip"><strong>The more you log, the more useful this becomes.</strong> As you and your team start using "After Meeting" notes (the tab on the left), this briefing gets richer every week. Today it might be thin. A month from now, it'll be like having a photographic memory.</div>
+            </div>
+
+            <div class="tab-panel" id="tab-pipeline">
+                <h4>The Situation</h4>
+                <p>It's Monday morning. You want to know where your deals stand, what needs attention, and where you should focus this week.</p>
+                <div class="prompt-card">
+                    <div class="prompt-card-header">
+                        <span class="prompt-label">Pipeline Check Prompt</span>
+                        <button class="copy-btn" onclick="copyPrompt(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button>
+                    </div>
+                    <div class="prompt-text">Show me all my active deals sorted by stage. Include deal name, amount, and close date. Flag any deals where the amount looks like a placeholder (under $1,000).</div>
+                </div>
+                <h4>What You Get Back</h4>
+                <p>A clean table of your entire pipeline. You'll see your Cool Prospects, Warm Prospects, and Under Contract deals at a glance. Claude will also flag deals that need attention &mdash; like ones with placeholder amounts that should be updated.</p>
+                <div class="callout callout-tip"><strong>Pro tip:</strong> Follow up with "Which of my Warm deals are closest to closing?" or "Show me deals I haven't touched in 30 days" to dig deeper.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PART 4 -->
+<div class="accordion" id="part4">
+    <div class="accordion-header" onclick="toggleAccordion(this)">
+        <h2><span class="acc-num">04</span> Practice Exercises</h2>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="accordion-body">
+        <div class="accordion-content">
+            <p class="accent">Now it's your turn. Complete each exercise using your own HubSpot data. Check the box when you're done.</p>
+
+            <div class="exercise" data-exercise="ex1" onclick="toggleExercise(this)">
+                <div class="exercise-check"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+                <div class="exercise-content">
+                    <h4>Exercise 1: See Your Pipeline (2 min)</h4>
+                    <ol>
+                        <li>Open a new Claude conversation with HubSpot connected</li>
+                        <li>Ask: "Show me all my active deals by stage with deal name and amount"</li>
+                        <li>Look at the results &mdash; do you see any placeholder amounts ($5, $6)?</li>
+                        <li>Pick one and ask Claude to update the amount to the real number</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="exercise" data-exercise="ex2" onclick="toggleExercise(this)">
+                <div class="exercise-check"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+                <div class="exercise-content">
+                    <h4>Exercise 2: Log a Note &mdash; the Big One (3 min)</h4>
+                    <ol>
+                        <li>Think of a recent client conversation &mdash; a call, a meeting, a model home visit</li>
+                        <li>Tell Claude: "Log a note on [client name]'s deal:" then describe what happened in plain English</li>
+                        <li>Review what Claude proposes to save &mdash; edit anything that's not right</li>
+                        <li>Confirm it &mdash; and watch the note appear in HubSpot</li>
+                        <li>This is the single most valuable thing you can do with Claude. Do it once and you'll never go back.</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="exercise" data-exercise="ex3" onclick="toggleExercise(this)">
+                <div class="exercise-check"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+                <div class="exercise-content">
+                    <h4>Exercise 3: Clean Up a Record (3 min)</h4>
+                    <ol>
+                        <li>Ask Claude: "Show me my deals where the amount is under $1,000"</li>
+                        <li>Pick a deal you know the real value of</li>
+                        <li>Ask Claude to update the amount, and while you're at it, log a quick note about where things stand</li>
+                        <li>You just improved your CRM data in 30 seconds &mdash; without opening HubSpot</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="callout callout-info">
+                <strong>What to notice:</strong> Every note you log and every amount you update makes your CRM smarter. The pipeline reports get more accurate. The client briefings get richer. Claude makes it so easy that the CRM actually gets better over time &mdash; without adding to your workload.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PART 5 -->
+<div class="accordion" id="part5">
+    <div class="accordion-header" onclick="toggleAccordion(this)">
+        <h2><span class="acc-num">05</span> When Claude Gets It Wrong</h2>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="accordion-body">
+        <div class="accordion-content">
+            <p class="accent">This is important: Claude is not perfect. And sometimes the issue isn't Claude &mdash; it's what's in the CRM. Here's how to handle both.</p>
+
+            <h4>If Claude says "there's no activity logged":</h4>
+            <p>That's not an error &mdash; it means no one entered notes, calls, or emails on that record. This is actually the most common thing you'll see right now. The fix? Start logging through Claude after your next conversation with that client. Every note you add makes the record richer for next time.</p>
+
+            <h4>If a deal shows $5 or $6 for the amount:</h4>
+            <p>Those are placeholder values. Just tell Claude: "Update the deal amount for [client] to $3.5M" and it'll fix it. No need to open HubSpot and click through fields.</p>
+
+            <h4>If Claude can't find someone:</h4>
+            <p>Try the full name as it appears in HubSpot (often "First & Spouse Last" format, like "Kim & Robert Tzoumakas"). You can also try their email address or phone number.</p>
+
+            <h4>If the output has a factual error:</h4>
+            <p>Simply tell Claude. "That's not right &mdash; the deal amount is $3.8M, not $2.5M. Can you check again?" Claude will correct itself.</p>
+
+            <h4>If you're ever unsure about a write action:</h4>
+            <p>Don't approve it. Say "Cancel" or start over. Nothing happens unless you confirm it.</p>
+
+            <div class="callout callout-gold">
+                <strong>The Golden Rule:</strong> Always read Claude's output as a first draft, not a finished product. Your job is to review, edit, and approve. The tool saves you time on the research and writing &mdash; the judgment is always yours. And remember: thin records aren't a failure. They're a starting point. Every time you use Claude to log a note or update a deal, the CRM gets better.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PART 6 -->
+<div class="accordion" id="part6">
+    <div class="accordion-header" onclick="toggleAccordion(this)">
+        <h2><span class="acc-num">06</span> More Prompts to Try</h2>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="accordion-body">
+        <div class="accordion-content">
+            <p class="accent">Once you're comfortable with the three daily uses, explore these.</p>
+
+            <h3>Pipeline & Reporting</h3>
+            <div class="prompt-card"><div class="prompt-card-header"><span class="prompt-label">Pipeline</span><button class="copy-btn" onclick="copyPrompt(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button></div><div class="prompt-text">Show me all active deals by stage with deal name, amount, owner, and days since last activity. Sort by amount descending.</div></div>
+            <div class="prompt-card"><div class="prompt-card-header"><span class="prompt-label">Hot Deals</span><button class="copy-btn" onclick="copyPrompt(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button></div><div class="prompt-text">Which deals are in Warm or Hot stage? Show amount, owner, and last activity date.</div></div>
+            <div class="prompt-card"><div class="prompt-card-header"><span class="prompt-label">Forecast</span><button class="copy-btn" onclick="copyPrompt(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button></div><div class="prompt-text">Based on deals in Warm and Hot stages with close dates in the next 90 days, what's our projected revenue? Show by month.</div></div>
+            <div class="prompt-card"><div class="prompt-card-header"><span class="prompt-label">Visual</span><button class="copy-btn" onclick="copyPrompt(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button></div><div class="prompt-text">Create a bar chart showing deal count and total value by stage (Cool, Warm, Hot, Under Contract).</div></div>
+
+            <h3>Updating the CRM</h3>
+            <div class="prompt-card"><div class="prompt-card-header"><span class="prompt-label">Move Deal</span><button class="copy-btn" onclick="copyPrompt(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button></div><div class="prompt-text">Update the deal "[deal name]" to Warm stage.</div></div>
+            <div class="prompt-card"><div class="prompt-card-header"><span class="prompt-label">Task</span><button class="copy-btn" onclick="copyPrompt(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button></div><div class="prompt-text">Create a task on [deal name]: "Send updated floor plan options" — due this Friday, assigned to [rep name].</div></div>
+            <div class="prompt-card"><div class="prompt-card-header"><span class="prompt-label">Log Call</span><button class="copy-btn" onclick="copyPrompt(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button></div><div class="prompt-text">Log a call on [contact name]: 15-minute call, discussed timeline. Client wants to visit the model home next Tuesday. Outcome: positive.</div></div>
+
+            <h3>Data Quality</h3>
+            <div class="prompt-card"><div class="prompt-card-header"><span class="prompt-label">Placeholders</span><button class="copy-btn" onclick="copyPrompt(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button></div><div class="prompt-text">Find all deals where the amount is under $1,000. These are likely placeholder values that need updating.</div></div>
+            <div class="prompt-card"><div class="prompt-card-header"><span class="prompt-label">Missing Dates</span><button class="copy-btn" onclick="copyPrompt(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button></div><div class="prompt-text">Which active deals are missing an expected close date? Show deal name, stage, and owner.</div></div>
+            <div class="prompt-card"><div class="prompt-card-header"><span class="prompt-label">No Owner</span><button class="copy-btn" onclick="copyPrompt(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button></div><div class="prompt-text">How many contacts have no owner assigned? Show me the 20 most recent ones.</div></div>
+
+            <h3>Marketing Connection</h3>
+            <div class="prompt-card"><div class="prompt-card-header"><span class="prompt-label">Engaged Leads</span><button class="copy-btn" onclick="copyPrompt(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button></div><div class="prompt-text">Find contacts who opened our emails more than 3 times in the last 30 days but don't have an active deal.</div></div>
+            <div class="prompt-card"><div class="prompt-card-header"><span class="prompt-label">Email History</span><button class="copy-btn" onclick="copyPrompt(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy</button></div><div class="prompt-text">Show me all email engagement for [contact name] — which emails did they open, click, and when?</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- PART 7 -->
+<div class="accordion" id="part7">
+    <div class="accordion-header" onclick="toggleAccordion(this)">
+        <h2><span class="acc-num">07</span> Making This a Habit</h2>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="accordion-body">
+        <div class="accordion-content">
+            <p class="accent">The difference between teams that adopt this tool and teams that forget about it comes down to one thing: using it in the first week.</p>
+
+            <div class="week-plan">
+                <div class="week-card">
+                    <div class="week-num">Week 1</div>
+                    <h4>The Briefing Habit</h4>
+                    <p>Before every client meeting, ask Claude for a summary. That's it. Just the briefing.</p>
+                </div>
+                <div class="week-card">
+                    <div class="week-num">Week 2</div>
+                    <h4>Add Note-Taking</h4>
+                    <p>After every meeting, log your notes through Claude instead of clicking through HubSpot.</p>
+                </div>
+                <div class="week-card">
+                    <div class="week-num">Week 3</div>
+                    <h4>Pipeline Check</h4>
+                    <p>Every Monday morning: "Show me my active deals sorted by days since last activity."</p>
+                </div>
+                <div class="week-card">
+                    <div class="week-num">Week 4</div>
+                    <h4>Explore</h4>
+                    <p>Try the prompts from Part 6. Ask questions you've never asked HubSpot. You'll be surprised.</p>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 24px;">Your Commitment</h3>
+            <p style="margin-bottom: 16px; font-size: 0.88rem; color: var(--slate);">Write these down. Teams that make a specific commitment are 3x more likely to follow through.</p>
+
+            <label class="commitment-label">The first client I'll brief using Claude this week:</label>
+            <input type="text" class="commitment-field" name="first_client" placeholder="e.g., The Johnsons" oninput="saveCommitment(this)">
+
+            <label class="commitment-label">When I'll do it:</label>
+            <input type="text" class="commitment-field" name="when" placeholder="e.g., Monday before my 10am meeting" oninput="saveCommitment(this)">
+
+            <label class="commitment-label">My go-to daily use will be:</label>
+            <input type="text" class="commitment-field" name="daily_use" placeholder="e.g., Before every client meeting" oninput="saveCommitment(this)">
+        </div>
+    </div>
+</div>
+
+<!-- QUICK REFERENCE -->
+<div class="accordion" id="quickref">
+    <div class="accordion-header" onclick="toggleAccordion(this)">
+        <h2><span class="acc-num" style="font-size:1.2rem;">&#9733;</span> Quick Reference Card</h2>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="accordion-body">
+        <div class="accordion-content" style="padding:0;">
+            <div class="quick-ref">
+                <div class="quick-ref-item">
+                    <span class="quick-ref-label">After a meeting</span>
+                    <span class="quick-ref-prompt">"Log a note on [name]'s deal: [what happened]."</span>
+                    <button class="quick-ref-copy" onclick="event.stopPropagation();copyText(this,'Log a note on [name]\'s deal: [describe what happened in plain English].')">Copy</button>
+                </div>
+                <div class="quick-ref-item">
+                    <span class="quick-ref-label">Before a meeting</span>
+                    <span class="quick-ref-prompt">"What do we know about [name]?"</span>
+                    <button class="quick-ref-copy" onclick="event.stopPropagation();copyText(this,'What do we know about [name]? Show deal info, contact details, and any logged activity.')">Copy</button>
+                </div>
+                <div class="quick-ref-item">
+                    <span class="quick-ref-label">Monday pipeline</span>
+                    <span class="quick-ref-prompt">"Show me my deals by stage with amounts."</span>
+                    <button class="quick-ref-copy" onclick="event.stopPropagation();copyText(this,'Show me all my active deals sorted by stage. Include deal name, amount, and close date.')">Copy</button>
+                </div>
+                <div class="quick-ref-item">
+                    <span class="quick-ref-label">Fix a placeholder</span>
+                    <span class="quick-ref-prompt">"Update [deal] amount to $X."</span>
+                    <button class="quick-ref-copy" onclick="event.stopPropagation();copyText(this,'Update the deal amount for [client name] to [real amount].')">Copy</button>
+                </div>
+                <div class="quick-ref-item">
+                    <span class="quick-ref-label">Move a deal</span>
+                    <span class="quick-ref-prompt">"Update [deal] to Warm Prospects."</span>
+                    <button class="quick-ref-copy" onclick="event.stopPropagation();copyText(this,'Update the deal [deal name] to Warm Prospects stage.')">Copy</button>
+                </div>
+                <div class="quick-ref-item">
+                    <span class="quick-ref-label">Create task</span>
+                    <span class="quick-ref-prompt">"Create task on [deal]: [desc], due [date]."</span>
+                    <button class="quick-ref-copy" onclick="event.stopPropagation();copyText(this,'Create a task on [deal name]: [description], due [date].')">Copy</button>
+                </div>
+                <div class="quick-ref-item">
+                    <span class="quick-ref-label">Data quality</span>
+                    <span class="quick-ref-prompt">"Deals with amount under $1,000."</span>
+                    <button class="quick-ref-copy" onclick="event.stopPropagation();copyText(this,'Find all my deals where the amount is under $1,000. These probably need real values.')">Copy</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- LIMITATIONS & HELP -->
+<div class="accordion" id="help">
+    <div class="accordion-header" onclick="toggleAccordion(this)">
+        <h2><span class="acc-num" style="font-size:1.2rem;">&#8505;</span> Limitations & Getting Help</h2>
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="accordion-body">
+        <div class="accordion-content">
+            <h3>What Claude Cannot Do</h3>
+            <ul class="limits-list">
+                <li>Delete records from HubSpot (by design &mdash; this is a safety feature)</li>
+                <li>Access custom objects (standard contacts, deals, and activities only)</li>
+                <li>Access uploaded files or documents stored in HubSpot</li>
+                <li>Make bulk changes to more than 10 records at once</li>
+                <li>Access data flagged as sensitive (PHI, financial account numbers)</li>
+                <li>Read your mind &mdash; it only knows what's been entered into HubSpot</li>
+                <li>Replace your judgment, your relationships, or your instincts</li>
+            </ul>
+
+            <h3 style="margin-top: 24px;">Good to Know</h3>
+            <ul class="help-list">
+                <li><strong>Names in HubSpot:</strong> Deals are usually named like "Bob & Kate Santonelli" (both spouses). Use that format when searching.</li>
+                <li><strong>Some contacts are from call tracking</strong> &mdash; they may have phone-based emails (@call.com). These are auto-created from inbound calls.</li>
+                <li><strong>Deal stages:</strong> Cool Prospects → Warm Prospects → Hot Prospects → Under Contract. Use these exact names when updating stages.</li>
+                <li><strong>Placeholder amounts:</strong> Many deals show $5 or $6. Ask Claude to find and fix these &mdash; it's the fastest way to clean up your pipeline data.</li>
+            </ul>
+
+            <h3 style="margin-top: 24px;">Getting Help</h3>
+            <ul class="help-list">
+                <li><strong>Can't find a contact?</strong> Try the full name (including spouse) or email address.</li>
+                <li><strong>Getting an error?</strong> Start a new conversation and try again.</li>
+                <li><strong>HubSpot connector not showing?</strong> Make sure you're logged into Claude Teams (not a personal account).</li>
+                <li><strong>Questions about Claude?</strong> Ask your team lead or contact Mark Bole.</li>
+                <li><strong>Questions about HubSpot data?</strong> Contact your CRM admin.</li>
+            </ul>
+
+            <div class="callout callout-gold" style="margin-top: 20px;">
+                <em>Remember: The goal is not to become an AI expert. The goal is to walk into every client conversation fully prepared, never lose track of a follow-up, and make HubSpot work for you instead of feeling like extra work.</em>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div><!-- /main -->
+
+<div class="footer">
+    Training prepared February 2026 &nbsp;|&nbsp; London Bay Homes CRM Initiative<br>
+    <span style="color:var(--gold);">Built with Claude</span>
+</div>
+
+<script>
+// Progress Bar
+function updateProgress() {
+    var st = window.scrollY;
+    var dh = document.documentElement.scrollHeight - window.innerHeight;
+    document.getElementById('progressBar').style.width = (dh > 0 ? (st / dh) * 100 : 0) + '%';
+}
+window.addEventListener('scroll', updateProgress);
+
+// Accordion
+function toggleAccordion(header) {
+    var acc = header.closest('.accordion');
+    var body = acc.querySelector('.accordion-body');
+    if (acc.classList.contains('open')) {
+        body.style.maxHeight = '0px';
+        acc.classList.remove('open');
+    } else {
+        acc.classList.add('open');
+        body.style.maxHeight = body.scrollHeight + 'px';
+    }
+}
+
+// Open Part 1 by default
+document.addEventListener('DOMContentLoaded', function() {
+    var first = document.querySelector('.accordion.open .accordion-body');
+    if (first) first.style.maxHeight = first.scrollHeight + 'px';
+    loadProgress();
+    loadCommitments();
+});
+
+// Copy from prompt cards
+function copyPrompt(btn) {
+    var text = btn.closest('.prompt-card').querySelector('.prompt-text').textContent.trim();
+    doCopy(text, btn);
+}
+
+// Copy from quick ref
+function copyText(btn, text) {
+    doCopy(text, btn);
+}
+
+function doCopy(text, btn) {
+    var orig = btn.innerHTML;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function() { showCopied(btn, orig); });
+    } else {
+        var ta = document.createElement('textarea');
+        ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); } catch(e) {}
+        document.body.removeChild(ta);
+        showCopied(btn, orig);
+    }
+}
+
+function showCopied(btn, orig) {
+    btn.classList.add('copied');
+    var svg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+    btn.innerHTML = svg + ' Copied!';
+    setTimeout(function() { btn.classList.remove('copied'); btn.innerHTML = orig; }, 2000);
+}
+
+// Tabs
+function switchTab(btn, targetId) {
+    var container = btn.closest('.accordion-content');
+    container.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+    container.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+    btn.classList.add('active');
+    document.getElementById(targetId).classList.add('active');
+}
+
+// Exercise checkboxes (localStorage)
+var PROG_KEY = 'lbh-training-progress';
+function loadProgress() {
+    try {
+        var saved = JSON.parse(localStorage.getItem(PROG_KEY) || '{}');
+        document.querySelectorAll('.exercise').forEach(function(el) {
+            if (saved[el.dataset.exercise]) el.classList.add('done');
+        });
+    } catch(e) {}
+}
+function toggleExercise(el) {
+    el.classList.toggle('done');
+    try {
+        var saved = JSON.parse(localStorage.getItem(PROG_KEY) || '{}');
+        saved[el.dataset.exercise] = el.classList.contains('done');
+        localStorage.setItem(PROG_KEY, JSON.stringify(saved));
+    } catch(e) {}
+}
+
+// Commitment fields (localStorage)
+var COMMIT_KEY = 'lbh-training-commitments';
+function loadCommitments() {
+    try {
+        var saved = JSON.parse(localStorage.getItem(COMMIT_KEY) || '{}');
+        document.querySelectorAll('.commitment-field').forEach(function(f) {
+            if (saved[f.name]) f.value = saved[f.name];
+        });
+    } catch(e) {}
+}
+function saveCommitment(field) {
+    try {
+        var saved = JSON.parse(localStorage.getItem(COMMIT_KEY) || '{}');
+        saved[field.name] = field.value;
+        localStorage.setItem(COMMIT_KEY, JSON.stringify(saved));
+    } catch(e) {}
+}
+
+// Smooth scroll nav
+document.querySelectorAll('.nav-link, .mobile-nav-link').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        var target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('mobileNav').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+    });
+});
+
+// Active nav highlighting
+var sections = document.querySelectorAll('.accordion');
+var navLinks = document.querySelectorAll('.nav-link');
+window.addEventListener('scroll', function() {
+    var current = '';
+    sections.forEach(function(s) {
+        if (window.pageYOffset >= s.offsetTop - 100) current = s.id;
+    });
+    navLinks.forEach(function(l) {
+        var active = l.getAttribute('href') === '#' + current;
+        l.style.borderBottomColor = active ? 'var(--gold)' : 'transparent';
+        l.style.color = active ? 'var(--navy)' : '';
+        l.style.fontWeight = active ? '600' : '';
+    });
+});
+
+// Hamburger menu
+document.getElementById('hamburgerBtn').addEventListener('click', function() {
+    document.getElementById('mobileNav').classList.add('open');
+    document.body.style.overflow = 'hidden';
+});
+document.getElementById('mobileNavClose').addEventListener('click', function() {
+    document.getElementById('mobileNav').classList.remove('open');
+    document.body.style.overflow = '';
+});
+</script>
+</body>
+</html>
